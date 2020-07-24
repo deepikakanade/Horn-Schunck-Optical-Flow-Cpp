@@ -5,25 +5,31 @@
 #include <stdio.h>
 #include <iostream>
 
-void convert_color_to_grayscale(cv::Mat image1, cv::Mat image2, cv::Mat &imageGray1, cv::Mat &imageGray2) {
+void preprocess_image(cv::Mat image1, cv::Mat image2, cv::Mat &Ix, cv::Mat &Iy) {
+    
+    cv::Mat grayImage1, grayImage2;
     
     // Converting RGB to Gray (OpenCV reads images in BGR format)
-    cv::cvtColor(image1, imageGray1, CV_BGR2GRAY);
-    cv::cvtColor(image2, imageGray2, CV_BGR2GRAY);
+    cv::cvtColor(image1, grayImage1, CV_BGR2GRAY);
+    cv::cvtColor(image2, grayImage2, CV_BGR2GRAY);
     
-}
+    cv::namedWindow("Gray Image", cv::WINDOW_AUTOSIZE);
+    cv::imshow("Gray Image", grayImage1);
+    
+    cv::Mat grayImageNorm1;
+    
+    // convert Uint8 to double, Normalize between 0 - 1
+    grayImage1.convertTo(grayImageNorm1, CV_64FC1, 1.0 / 255.0);
 
-void edge_detection(cv::Mat grayImage1, cv::Mat &Ix, cv::Mat &Iy) {
-    
     // To have destination image of same depth as the source
     int ddepth = -1;
 
-    // Find gradient in X direction with 3x3 kernel size
+    // Find derivative of image intensity values in X direction with 3x3 kernel size
     Sobel(grayImage1, Ix, ddepth, 1, 0, 3);
     
-    // Find gradient in Y direction with 3x3 kernel size
+    // Find derivative of image intensity values in Y direction with 3x3 kernel size
     Sobel(grayImage1, Iy, ddepth, 0, 1, 3);
-
+    
 }
 
 int main(int argc, char* argv[]) {
@@ -47,24 +53,16 @@ int main(int argc, char* argv[]) {
     std::cout << "Shape of the image is: " << "[" << image1.size().height << ", " << image1.size().width << "]" << std::endl;
     std::cout << "Number of channels in the image is: " << image1.channels() << std::endl;
     
-    namedWindow("Original Image", cv::WINDOW_AUTOSIZE);
-    cv::imshow("Original Image", image1);
+    namedWindow("Original Image 1", cv::WINDOW_AUTOSIZE);
+    cv::imshow("Original Image 1", image1);
     
-    cv::Mat grayImage1, grayImage2;
-    
-    // Convert rgb image to grayscale
-    convert_color_to_grayscale(image1, image2, grayImage1, grayImage2);
-    
-    cv::namedWindow("Gray Image", cv::WINDOW_AUTOSIZE);
-    cv::imshow("Gray Image", grayImage1);
-    
-    cv::Mat grayImageNorm1;
-    // convert Uint8 to double, Normalize between 0 - 1
-    grayImage1.convertTo(grayImageNorm1, CV_64FC1, 1.0 / 255.0);
+    namedWindow("Original Image 2", cv::WINDOW_AUTOSIZE);
+    cv::imshow("Original Image 2", image2);
     
     cv::Mat Ix, Iy;
-    // Find derivatives of image intensity values in X and Y direction
-    edge_detection(grayImageNorm1, Ix, Iy);
+    
+    // Conversion of BGR to Grayscale and edge detection
+    preprocess_image(image1, image2, Ix, Iy);
     
     /*for(int row = 0; row < Iy.rows; row++) {
         for(int col = 0; col < Iy.cols; col++) {
