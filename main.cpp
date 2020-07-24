@@ -29,8 +29,8 @@ void edge_detection(cv::Mat grayImage1, cv::Mat &Ix, cv::Mat &Iy) {
 int main(int argc, char* argv[]) {
     
 	// Read input images
-	cv::Mat image1 = cv::imread(argv[1]);
-	cv::Mat image2 = cv::imread(argv[2]);
+    cv::Mat image1 = cv::imread(argv[1]);
+    cv::Mat image2 = cv::imread(argv[2]);
 
 	// Check if files are loaded properly
     if (!(image1.data) || !(image2.data)) {
@@ -52,8 +52,8 @@ int main(int argc, char* argv[]) {
     
     cv::Mat grayImage1, grayImage2;
     
-	// Convert rgb image to grayscale
-	convert_color_to_grayscale(image1, image2, grayImage1, grayImage2);
+    // Convert rgb image to grayscale
+    convert_color_to_grayscale(image1, image2, grayImage1, grayImage2);
     
     cv::namedWindow("Gray Image", cv::WINDOW_AUTOSIZE);
     cv::imshow("Gray Image", grayImage1);
@@ -81,5 +81,5 @@ int main(int argc, char* argv[]) {
     
     cv::waitKey(0);
     
-	return 0;
+    return 0;
 }
