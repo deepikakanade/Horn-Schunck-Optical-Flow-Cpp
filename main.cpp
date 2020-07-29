@@ -8,16 +8,17 @@
 void preprocess(cv::Mat imagePrevRaw, cv::Mat imageNextRaw, cv::Mat &imagePrev, cv::Mat &imageNext) {
         
     // Converting RGB to Gray if necessary
-    if (imagePrevRaw.channels() > 1){
+    if (imagePrevRaw.channels() > 1) {
         cv::cvtColor(imagePrevRaw, imagePrev, cv::COLOR_BGR2GRAY);
     }
-    else{
+    else {
         imagePrevRaw.copyTo(imagePrev);
     }
-    if (imageNextRaw.channels() > 1){
+    
+    if (imageNextRaw.channels() > 1) {
         cv::cvtColor(imageNextRaw, imageNext, cv::COLOR_BGR2GRAY);
     }
-    else{
+    else {
         imageNextRaw.copyTo(imageNext);
     }
 }
@@ -29,7 +30,7 @@ void getGradients(cv::Mat imagePrev, cv::Mat imageNext, cv::Mat &gradX, cv::Mat 
     imagePrev.convertTo(imagePrevNorm, CV_64FC1);
     imageNext.convertTo(imageNextNorm, CV_64FC1);
     
-    // Obtain gradient in X direction and Y direction using a Sobel Filter
+    // Obtain gradient in X direction and Y direction using a 3x3 Sobel Filter
     Sobel(imagePrevNorm, gradX, -1, 1, 0, 3);
     Sobel(imagePrevNorm, gradY, -1, 0, 1, 3);
     
@@ -45,7 +46,7 @@ void hornSchunckFlow(cv::Mat imagePrev, cv::Mat imageNext, cv::Mat &u, cv::Mat &
     
     std::cout << "Gradient X Size: " << gradX.size() << std::endl;
     std::cout << "Gradient Y Size: " << gradY.size() << std::endl;
-    std::cout << "Gradient T Size: " << gradT.size() << std::endl;
+    std::cout << "Gradient T Size: " << gradT.size() << std::endl << std::endl;
     
     // Initialize u and v matrices with zeros of same size and format as gradT
     u = cv::Mat::zeros(gradT.rows, gradT.cols, CV_64FC1);
@@ -62,6 +63,7 @@ void hornSchunckFlow(cv::Mat imagePrev, cv::Mat imageNext, cv::Mat &u, cv::Mat &
     for (int i = 0; i < maxIterations; i++) {
         cv::Mat uAvg, vAvg, gradXuAvg, gradYvAvg, gradXgradX, gradYgradY, updateConst, uUpdateConst, vUpdateConst; //TBD to generalize
         
+        // Convolving image with a kernel, low pass filtering
         filter2D(u, uAvg, u.depth(), kernel, anchor, 0, cv::BORDER_CONSTANT);
         filter2D(v, vAvg, v.depth(), kernel, anchor, 0, cv::BORDER_CONSTANT);
         
@@ -79,35 +81,46 @@ void hornSchunckFlow(cv::Mat imagePrev, cv::Mat imageNext, cv::Mat &u, cv::Mat &
     }
 }
 
-void plot1(cv::Mat img, cv::Mat u, cv::Mat v, int delta, float scale){
+void plot1(cv::Mat img, cv::Mat u, cv::Mat v, int delta, float scale, std::string savePath) {
     cv::Mat imgPlot = img.clone();
-    for (int i=0; i<img.rows; i+=delta){
-        for (int j=0; j<img.cols; j+=delta){
+    
+    for (int i = 0; i < img.rows; i += delta){
+        for (int j = 0; j < img.cols; j += delta) {
+            // Calculating u + du
             int iEnd = i + (int)(u.at<double>(i, j) * scale);
+            // Calculating v + dv
             int jEnd = j + (int)(v.at<double>(i, j) * scale);
+            
             //std::cout << i << " " << j << " " << u.at<double>(i, j) << " " << v.at<double>(i, j) << " " << iEnd << " " << jEnd << std::endl;
             cv::Point p = cv::Point(i, j);
             cv::Point p2 = cv::Point(iEnd, jEnd);
+            
             cv::arrowedLine(imgPlot, p, p2, CV_RGB(0, 255, 0), 1, cv::LINE_AA);
         }
     }
+    
     cv::namedWindow("Plot1 Image", cv::WINDOW_AUTOSIZE);
     cv::imshow("Plot1 Image", imgPlot);
+    std::string fileName = "plot1.jpg";
+    cv::imwrite(savePath + fileName, imgPlot);
 }
 
-void plot2(cv::Mat img_sz, cv::Mat velx, cv::Mat vely, float scale){
+void plot2(cv::Mat img_sz, cv::Mat velx, cv::Mat vely, float scale, std::string savePath) {
     cv::Mat imgPlot = img_sz.clone();
     double l_max = -10;
-    for (int y = 0; y < img_sz.rows; y+=10){
-        for (int x = 0; x < img_sz.cols; x+=10){
+    
+    for (int y = 0; y < img_sz.rows; y += 10) {
+        for (int x = 0; x < img_sz.cols; x += 10) {
             double dx = velx.at<double>(y, x) * scale;
             double dy = vely.at<double>(y, x) * scale;
             double l = sqrt(dx*dx + dy*dy);
-            if(l>l_max) l_max = l;
+            if(l>l_max)
+                l_max = l;
         }
     }
-    for (int y = 0; y < img_sz.rows; y+=10){
-        for (int x = 0; x < img_sz.cols; x+=10){
+    
+    for (int y = 0; y < img_sz.rows; y += 10){
+        for (int x = 0; x < img_sz.cols; x += 10){
             double dx = velx.at<double>(y, x) * scale;
             double dy = vely.at<double>(y, x) * scale;
             cv::Point p = cv::Point(x, y);
@@ -130,8 +143,11 @@ void plot2(cv::Mat img_sz, cv::Mat velx, cv::Mat vely, float scale){
             }
         }
     }
+    
     cv::namedWindow("Plot2 Image", cv::WINDOW_AUTOSIZE);
     cv::imshow("Plot2 Image", imgPlot);
+    std::string fileName = "plot2.jpg";
+    cv::imwrite(savePath + fileName, imgPlot);
 }
 
 
@@ -159,7 +175,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Raw Previous Image Size: " << imagePrevRaw.size() << std::endl;
     std::cout << "Raw Previous Image Channel Size: " << imagePrevRaw.channels() << std::endl;
     std::cout << "Raw Next Image Size: " << imageNextRaw.size() << std::endl;
-    std::cout << "Raw Next Image Channel Size: " << imageNextRaw.channels() << std::endl;
+    std::cout << "Raw Next Image Channel Size: " << imageNextRaw.channels() << std::endl << std::endl;
     
     cv::Mat imagePrev, imageNext;
     preprocess(imagePrevRaw, imageNextRaw, imagePrev, imageNext);
@@ -167,7 +183,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Previous Image Size: " << imagePrev.size() << std::endl;
     std::cout << "Previous Image Channel Size: " << imagePrev.channels() << std::endl;
     std::cout << "Next Image Size: " << imageNext.size() << std::endl;
-    std::cout << "Next Image Channel Size: " << imageNext.channels() << std::endl;
+    std::cout << "Next Image Channel Size: " << imageNext.channels() << std::endl << std::endl;
     
     
     cv::Mat u, v;
@@ -180,8 +196,9 @@ int main(int argc, char* argv[]) {
     cv::FileStorage file_2(argv[4], cv::FileStorage::WRITE);
     file_2 << "v matrix" << v;
     
-    plot1(imagePrevRaw, u, v, 10, 20);
-    plot2(imagePrevRaw, u, v, 20);
+    std::string savePath = argv[5];
+    plot1(imagePrevRaw, u, v, 10, 20, savePath);
+    plot2(imagePrevRaw, u, v, 20, savePath);
     
     cv::waitKey(0);
     return 0;
