@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <iostream>
 
-class hornSchunck {
+class hornSchunck{
 public:
     int windowSize, maxIterations;
     double alpha;
@@ -26,6 +26,14 @@ public:
         // Obtain gradient in X direction and Y direction using a 3x3 Sobel Filter
         Sobel(imagePrevNorm, gradX, -1, 1, 0, 3);
         Sobel(imagePrevNorm, gradY, -1, 0, 1, 3);
+        
+        //cv::Mat gradX1, gradX2, gradY1, gradY2;
+        //Sobel(imagePrevNorm, gradX1, -1, 1, 0, 3);
+        //Sobel(imageNextNorm, gradX2, -1, 1, 0, 3);
+        //Sobel(imagePrevNorm, gradY1, -1, 0, 1, 3);
+        //Sobel(imageNextNorm, gradY2, -1, 0, 1, 3);
+        //gradX = (gradX1+gradX2)/2.0;
+        //gradY = (gradY1+gradY2)/2.0;
         
         // Obtain gradient in T direction by subtracting both the images
         gradT = imageNextNorm - imagePrevNorm;
